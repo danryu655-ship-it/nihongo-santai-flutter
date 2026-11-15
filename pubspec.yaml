@@ -2,7 +2,7 @@ name: translateoffline
 description: "Nihongo Santai — Translate, Belajar & Travel (Jepang, Indonesia, Inggris)."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+11
 
 environment:
   sdk: ^3.14.0
