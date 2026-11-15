@@ -16,7 +16,8 @@ class TranslateScreen extends StatefulWidget {
   State<TranslateScreen> createState() => _TranslateScreenState();
 }
 
-class _TranslateScreenState extends State<TranslateScreen> {
+class _TranslateScreenState extends State<TranslateScreen>
+    with WidgetsBindingObserver {
   final _dictCtrl = TextEditingController();
   final _trCtrl = TextEditingController();
   List<DictEntry> _dictResults = [];
@@ -31,7 +32,23 @@ class _TranslateScreenState extends State<TranslateScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _probe();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _dictCtrl.dispose();
+    _trCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Aplikasi kembali ke foreground (mis. setelah pindah aplikasi /
+    // hidupkan data): cek ulang koneksi supaya chip tidak merah selamanya.
+    if (state == AppLifecycleState.resumed) _probe();
   }
 
   Future<void> _probe() async {
@@ -41,6 +58,13 @@ class _TranslateScreenState extends State<TranslateScreen> {
     }
     final ok = await probeOnline();
     if (mounted) setState(() => _online = ok);
+  }
+
+  /// Cek ulang manual lewat ketuk chip status.
+  Future<void> _recheck() async {
+    if (widget.state.forceOffline) return;
+    setState(() => _online = null); // tampil "⏳ Mengecek koneksi…"
+    await _probe();
   }
 
   void _onDictChanged(String q) {
@@ -63,10 +87,13 @@ class _TranslateScreenState extends State<TranslateScreen> {
     });
     String? out;
     String note;
+    var onlineOk = false;
     final srcCode = _srcAuto ? 'auto' : _src.code;
     if (!widget.state.forceOffline && _online != false) {
       out = await translateOnline(text, srcCode, _dst);
       if (out != null) {
+        // Bukti nyata internet jalan: terjemah online berhasil.
+        onlineOk = true;
         note = 'Diterjemahkan online (Google Translate).';
       } else {
         out = offlineTranslate(text, _dst);
@@ -85,6 +112,7 @@ class _TranslateScreenState extends State<TranslateScreen> {
       _translating = false;
       _trResult = out ?? '';
       _trNote = note;
+      if (onlineOk) _online = true;
     });
   }
 
@@ -304,9 +332,13 @@ class _TranslateScreenState extends State<TranslateScreen> {
                 : '🔴 Offline';
     return Row(
       children: [
-        Chip(
-          label: Text(label, style: const TextStyle(fontSize: 12)),
-          backgroundColor: Colors.white,
+        InkWell(
+          onTap: forced ? null : _recheck,
+          borderRadius: BorderRadius.circular(16),
+          child: Chip(
+            label: Text(label, style: const TextStyle(fontSize: 12)),
+            backgroundColor: Colors.white,
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(

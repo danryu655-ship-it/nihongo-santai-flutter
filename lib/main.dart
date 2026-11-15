@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'screens/learn_screen.dart';
@@ -9,14 +11,18 @@ import 'widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final startedAt = DateTime.now();
   final state = await AppState.load();
-  runApp(NihongoApp(state: state));
+  runApp(NihongoApp(state: state, startedAt: startedAt));
 }
 
 class NihongoApp extends StatelessWidget {
-  const NihongoApp({super.key, required this.state});
+  const NihongoApp({super.key, required this.state, required this.startedAt});
 
   final AppState state;
+
+  /// Waktu aplikasi mulai dibuka (untuk menghitung durasi splash 30 detik).
+  final DateTime startedAt;
 
   @override
   Widget build(BuildContext context) {
@@ -32,15 +38,16 @@ class NihongoApp extends StatelessWidget {
           foregroundColor: Colors.white,
         ),
       ),
-      home: HomePage(state: state),
+      home: HomePage(state: state, startedAt: startedAt),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.state});
+  const HomePage({super.key, required this.state, required this.startedAt});
 
   final AppState state;
+  final DateTime startedAt;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -48,9 +55,41 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _tab = 0;
+  bool _showSplash = true;
+  Timer? _splashTimer;
+
+  /// Splash tampil total 30 detik sejak aplikasi dibuka (termasuk waktu
+  /// native splash), bisa di-skip dengan ketukan.
+  static const _splashTotal = Duration(seconds: 30);
+
+  @override
+  void initState() {
+    super.initState();
+    final elapsed = DateTime.now().difference(widget.startedAt);
+    final remaining = _splashTotal - elapsed;
+    if (remaining <= Duration.zero) {
+      _showSplash = false;
+    } else {
+      _splashTimer = Timer(remaining, () {
+        if (mounted) setState(() => _showSplash = false);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _splashTimer?.cancel();
+    super.dispose();
+  }
+
+  void _skipSplash() {
+    _splashTimer?.cancel();
+    if (_showSplash) setState(() => _showSplash = false);
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_showSplash) return _buildSplash();
     final pages = <Widget>[
       TranslateScreen(state: widget.state),
       LearnScreen(state: widget.state),
@@ -90,6 +129,69 @@ class _HomePageState extends State<HomePage> {
             label: 'Trip',
           ),
         ],
+      ),
+    );
+  }
+
+  /// Layar splash Flutter: logo besar + judul + subtitle di atas latar
+  /// ungu brand. Muncul setelah native splash hilang, total 30 detik
+  /// sejak aplikasi dibuka. Ketuk di mana saja untuk lanjut lebih cepat.
+  Widget _buildSplash() {
+    return GestureDetector(
+      onTap: _skipSplash,
+      child: Scaffold(
+        backgroundColor: brand,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(80),
+                  child: Image.asset(
+                    'assets/logo.jpg',
+                    width: 160,
+                    height: 160,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const CircleAvatar(
+                      radius: 80,
+                      backgroundColor: Colors.white,
+                      child: Text('日',
+                          style: TextStyle(fontSize: 80, color: brand)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Nihongo Santai',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Translate, Belajar & Travel',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 17,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 64),
+                const Text(
+                  'Ketuk untuk lanjut',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

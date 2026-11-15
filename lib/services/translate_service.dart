@@ -172,8 +172,24 @@ Future<String?> translateOnline(
   }
 }
 
-/// Probe cepat: apakah endpoint translate bisa dijangkau.
+/// Probe cepat: apakah internet bisa dijangkau.
+/// Coba dulu endpoint ringan standar Android (generate_204 — yang dipakai
+/// sistem untuk deteksi captive portal), baru endpoint translate sebagai
+/// cadangan: translate bisa diblokir/diblokir DNS padahal internet menyala.
+/// Online bila SALAH SATU berhasil.
 Future<bool> probeOnline() async {
+  try {
+    final res = await http
+        .get(
+          Uri.parse(
+            'https://connectivitycheck.gstatic.com/generate_204',
+          ),
+        )
+        .timeout(const Duration(seconds: 5));
+    if (res.statusCode == 204) return true;
+  } catch (_) {
+    // Lanjut ke cadangan di bawah.
+  }
   try {
     final res = await http
         .get(
@@ -182,7 +198,7 @@ Future<bool> probeOnline() async {
             '?client=gtx&sl=auto&tl=id&dt=t&q=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF',
           ),
         )
-        .timeout(const Duration(seconds: 4));
+        .timeout(const Duration(seconds: 5));
     return res.statusCode == 200;
   } catch (_) {
     return false;
