@@ -1,0 +1,37 @@
+{
+  "dictionary": 489,
+  "phrases": 67,
+  "konbini": 33,
+  "menu": 41,
+  "allergy": 12,
+  "diet": 4,
+  "quiz": 10,
+  "hiragana": 46,
+  "hiraganaDakuten": 25,
+  "katakana": 46,
+  "katakanaDakuten": 25,
+  "grammarGroups": 24,
+  "grammarQuestions": 240,
+  "lessons": 48,
+  "lessonsPerLevel": {
+    "N5": 19,
+    "N4": 10,
+    "N3": 8,
+    "N2": 6,
+    "N1": 5
+  },
+  "levels": 5,
+  "cities": 8,
+  "templates": 8,
+  "templateItems": {
+    "Tokyo|東京": 12,
+    "Kyoto|京都": 12,
+    "Osaka|大阪": 8,
+    "Nara|奈良": 7,
+    "Fuji / Kawaguchiko|富士山・河口湖": 7,
+    "Hiroshima|広島": 8,
+    "Hokkaido|北海道": 12,
+    "Okinawa|沖縄": 12
+  },
+  "packing": 10
+}
