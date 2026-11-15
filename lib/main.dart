@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'screens/kana_screen.dart';
 import 'screens/learn_screen.dart';
 import 'screens/phrases_screen.dart';
 import 'screens/translate_screen.dart';
-import 'screens/trip_screen.dart';
 import 'services/store.dart';
 import 'widgets.dart';
 
@@ -94,7 +94,7 @@ class _HomePageState extends State<HomePage> {
       TranslateScreen(state: widget.state),
       LearnScreen(state: widget.state),
       PhrasesScreen(state: widget.state),
-      TripScreen(state: widget.state),
+      KanaScreen(state: widget.state),
     ];
     return Scaffold(
       body: SafeArea(
@@ -111,22 +111,29 @@ class _HomePageState extends State<HomePage> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: brand,
         unselectedItemColor: Colors.grey.shade600,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.translate),
             label: 'Terjemah',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.school),
             label: 'Belajar',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             label: 'Frasa',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.flight_takeoff),
-            label: 'Trip',
+            icon: Text(
+              'あ',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: _tab == 3 ? brand : Colors.grey.shade600,
+              ),
+            ),
+            label: 'Kana',
           ),
         ],
       ),
@@ -173,7 +180,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Translate, Belajar & Travel',
+                  'Translate, Belajar & Kana',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 17,
@@ -244,7 +251,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         Text(
-                          'Translate, Belajar & Travel',
+                          'Translate, Belajar & Kana',
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 13,

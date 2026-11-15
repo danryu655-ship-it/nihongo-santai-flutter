@@ -32,26 +32,12 @@ class AppState extends ChangeNotifier {
   List<int> konbiniDone = []; // indeks konbiniItems
   int quizBest = 0;
 
-  // ---------- Trip ----------
-  String tripCity = 'Tokyo|東京';
-  int tripDays = 3;
-  int tripBudget = 100000;
-  String tripNote = '';
-  List<Map<String, dynamic>> itin = []; // {day, time, activity}
-  Map<String, String> flight = {}; // airline, number, date, depTime, arrTime, from, to
-  List<Map<String, dynamic>> docs = []; // {type, code, note}
-  List<int> packDone = []; // indeks packingList
-  List<String> wishes = [];
-  List<Map<String, dynamic>> expenses = []; // {name, amt}
-  int splitPeople = 2;
+  // ---------- Kana ----------
+  Map<String, double> kanaProgress = {}; // huruf kana -> penguasaan 0..1
 
   int get level => xp ~/ 100 + 1;
   int get xpIntoLevel => xp % 100;
   int get lessonsDone => done.length;
-
-  String get tripCityName => tripCity.split('|').first;
-  String get tripCityJapanese =>
-      tripCity.contains('|') ? tripCity.split('|').last : '';
 
   // ---------- Load ----------
   void _loadAll() {
@@ -69,20 +55,11 @@ class AppState extends ChangeNotifier {
     konbiniDone = _intList('nsf_konbini_v1');
     quizBest = _prefs.getInt('nsf_quiz_best_v1') ?? 0;
 
-    final trip = _json('nsf_trip_v1');
-    tripCity = trip['city'] as String? ?? 'Tokyo|東京';
-    tripDays = (trip['days'] as num?)?.toInt() ?? 3;
-    tripBudget = (trip['budget'] as num?)?.toInt() ?? 100000;
-    tripNote = trip['note'] as String? ?? '';
-
-    itin = _mapList('nsf_itin_v1');
-    final fl = _json('nsf_flight_v1');
-    flight = fl.map((k, v) => MapEntry(k.toString(), v.toString()));
-    docs = _mapList('nsf_docs_v1');
-    packDone = _intList('nsf_pack_v1');
-    wishes = _strList('nsf_wish_v1');
-    expenses = _mapList('nsf_exp_v1');
-    splitPeople = _prefs.getInt('nsf_split_v1') ?? 2;
+    final kp = _json('nsf_kana_progress');
+    kanaProgress = kp.map(
+      (k, v) =>
+          MapEntry(k.toString(), (v as num).toDouble().clamp(0, 1).toDouble()),
+    );
   }
 
   Map<String, dynamic> _json(String key) {
@@ -115,23 +92,6 @@ class AppState extends ChangeNotifier {
       return v is List
           ? v.map((e) => (e as num).toInt()).toList()
           : [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  List<Map<String, dynamic>> _mapList(String key) {
-    final raw = _prefs.getString(key);
-    if (raw == null) return [];
-    try {
-      final v = jsonDecode(raw);
-      if (v is List) {
-        return v
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
-      }
-      return [];
     } catch (_) {
       return [];
     }
@@ -227,111 +187,18 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // ---------- Trip ----------
-  void saveTrip({
-    required String city,
-    required int days,
-    required int budget,
-    required String note,
-  }) {
-    tripCity = city;
-    tripDays = days;
-    tripBudget = budget;
-    tripNote = note;
-    _save(
-      'nsf_trip_v1',
-      jsonEncode({
-        'city': city,
-        'days': days,
-        'budget': budget,
-        'note': note,
-      }),
-    );
-    notifyListeners();
-  }
+  // ---------- Kana ----------
+  double kanaMastery(String kana) => kanaProgress[kana] ?? 0;
 
-  void addItin(int day, String time, String activity) {
-    itin.add({'day': day, 'time': time, 'activity': activity});
-    _save('nsf_itin_v1', jsonEncode(itin));
-    notifyListeners();
-  }
-
-  void delItin(int index) {
-    itin.removeAt(index);
-    _save('nsf_itin_v1', jsonEncode(itin));
-    notifyListeners();
-  }
-
-  void applyTemplate(List<Map<String, dynamic>> items) {
-    itin.addAll(items);
-    _save('nsf_itin_v1', jsonEncode(itin));
-    notifyListeners();
-  }
-
-  void saveFlight(Map<String, String> f) {
-    flight = Map.of(f);
-    _save('nsf_flight_v1', jsonEncode(flight));
-    notifyListeners();
-  }
-
-  void clearFlight() {
-    flight = {};
-    _save('nsf_flight_v1', jsonEncode(flight));
-    notifyListeners();
-  }
-
-  void addDoc(String type, String code, String note) {
-    docs.add({'type': type, 'code': code, 'note': note});
-    _save('nsf_docs_v1', jsonEncode(docs));
-    notifyListeners();
-  }
-
-  void delDoc(int index) {
-    docs.removeAt(index);
-    _save('nsf_docs_v1', jsonEncode(docs));
-    notifyListeners();
-  }
-
-  void togglePack(int i) {
-    if (packDone.contains(i)) {
-      packDone.remove(i);
-    } else {
-      packDone.add(i);
-    }
-    _save('nsf_pack_v1', jsonEncode(packDone));
-    notifyListeners();
-  }
-
-  void addWish(String w) {
-    wishes.add(w);
-    _save('nsf_wish_v1', jsonEncode(wishes));
-    notifyListeners();
-  }
-
-  void delWish(int index) {
-    wishes.removeAt(index);
-    _save('nsf_wish_v1', jsonEncode(wishes));
-    notifyListeners();
-  }
-
-  void addExpense(String name, int amt) {
-    expenses.add({'name': name, 'amt': amt});
-    _save('nsf_exp_v1', jsonEncode(expenses));
-    notifyListeners();
-  }
-
-  void delExpense(int index) {
-    expenses.removeAt(index);
-    _save('nsf_exp_v1', jsonEncode(expenses));
-    notifyListeners();
-  }
-
-  int get totalExpense =>
-      expenses.fold(0, (s, e) => s + ((e['amt'] as num?)?.toInt() ?? 0));
-
-  void setSplitPeople(int n) {
-    splitPeople = n.clamp(1, 50);
-    _save('nsf_split_v1', splitPeople);
+  /// Jawaban kuis benar: penguasaan huruf naik +0.25 (maks 1).
+  /// Jawaban salah: turun -0.1 (min 0).
+  void bumpKana(String kana, bool correct) {
+    final cur = kanaProgress[kana] ?? 0;
+    final next = correct
+        ? (cur + 0.25).clamp(0, 1).toDouble()
+        : (cur - 0.1).clamp(0, 1).toDouble();
+    kanaProgress[kana] = next;
+    _save('nsf_kana_progress', jsonEncode(kanaProgress));
     notifyListeners();
   }
 }

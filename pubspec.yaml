@@ -1,8 +1,8 @@
 name: translateoffline
-description: "Nihongo Santai — Translate, Belajar & Travel (Jepang, Indonesia, Inggris)."
+description: "Nihongo Santai — Translate, Belajar & Kana (Jepang, Indonesia, Inggris)."
 publish_to: 'none'
 
-version: 1.0.0+13
+version: 1.0.0+14
 
 environment:
   sdk: ^3.14.0
@@ -13,8 +13,6 @@ dependencies:
   shared_preferences: ^2.5.3
   flutter_tts: ^4.2.3
   http: ^1.4.0
-  printing: ^5.14.2
-  pdf: ^3.11.3
 
 dev_dependencies:
   flutter_test:
