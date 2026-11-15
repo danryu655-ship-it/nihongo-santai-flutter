@@ -15,7 +15,7 @@ class TtsService {
     if (_ready) return _hasJapanese;
     try {
       await _tts.setLanguage('ja-JP');
-      await _tts.setSpeechRate(0.9);
+      await _tts.setSpeechRate(0.7);
       await _tts.setPitch(1.0);
       dynamic avail;
       try {
@@ -48,11 +48,17 @@ class TtsService {
   }
 
   /// Ucapkan [text]. Kembalikan false bila voice Jepang tidak tersedia.
+  /// Kecepatan 0.7 (pelan, untuk pelajar) + bahasa ja-JP diterapkan ulang
+  /// sebelum SETIAP ucapan — di Android setting TTS kadang tidak menempel
+  /// bila hanya di-set sekali saat init.
   Future<bool> speak(String text) async {
     final ok = await ensureReady();
     if (!ok) return false;
     try {
       await _tts.stop();
+      await _tts.setLanguage('ja-JP');
+      await _tts.setSpeechRate(0.7);
+      await _tts.setPitch(1.0);
       await _tts.speak(text);
       return true;
     } catch (_) {
