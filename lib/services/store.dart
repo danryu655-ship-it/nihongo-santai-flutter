@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/school_sync.dart';
 
 
 /// Semua penyimpanan aplikasi memakai prefix `nsf_`.
