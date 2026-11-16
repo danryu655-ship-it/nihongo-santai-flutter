@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'screens/kana_screen.dart';
 import 'screens/learn_screen.dart';
 import 'screens/phrases_screen.dart';
+import 'screens/school_screen.dart';
 import 'screens/translate_screen.dart';
 import 'services/store.dart';
 import 'screens/student_picker.dart';
@@ -107,6 +108,7 @@ Widget build(BuildContext context) {
       LearnScreen(state: widget.state),
       PhrasesScreen(state: widget.state),
       KanaScreen(state: widget.state),
+      SchoolScreen(state: widget.state),
     ];
     return Scaffold(
       body: SafeArea(
@@ -146,6 +148,10 @@ Widget build(BuildContext context) {
               ),
             ),
             label: 'Kana',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.groups),
+            label: 'Sekolah',
           ),
         ],
       ),

@@ -6,6 +6,23 @@ import 'package:http/http.dart' as http;
 import '../data/lessons.dart';
 import 'store.dart';
 
+/// Satu baris daftar siswa dari Supabase (untuk tab Sekolah di aplikasi).
+class SchoolStudent {
+  const SchoolStudent({
+    required this.key,
+    required this.name,
+    required this.level,
+    required this.lessonsDone,
+    required this.xp,
+  });
+
+  final String key;
+  final String name;
+  final String level;
+  final int lessonsDone;
+  final int xp;
+}
+
 /// Sinkronisasi progres belajar ke Supabase (tabel public.school_progress)
 /// untuk dibaca Sekolah Nihongo Santai (versi live).
 ///
@@ -110,6 +127,47 @@ class SchoolSyncService {
       'xp': s.xp,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
+  }
+
+  /// Ambil daftar siswa terbaru dari Supabase (untuk tab Sekolah).
+  /// Tidak pernah throw: gagal -> daftar kosong + pesan error.
+  Future<({List<SchoolStudent> students, String? error})>
+      fetchRoster() async {
+    final uri = Uri.parse(
+      '$_supabaseUrl/rest/v1/$_table?select=student_key,display_name,level,lessons_done,xp&order=xp.desc',
+    );
+    try {
+      final res = await http.get(
+        uri,
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': 'Bearer $supabaseAnonKey',
+        },
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        return (
+          students: const <SchoolStudent>[],
+          error: 'Supabase ${res.statusCode}'
+        );
+      }
+      final raw = jsonDecode(res.body) as List;
+      final list = raw.map((r) {
+        final m = r as Map<String, dynamic>;
+        return SchoolStudent(
+          key: (m['student_key'] as String?) ?? '',
+          name: (m['display_name'] as String?) ?? '',
+          level: (m['level'] as String?) ?? 'N5',
+          lessonsDone: (m['lessons_done'] as num?)?.toInt() ?? 0,
+          xp: (m['xp'] as num?)?.toInt() ?? 0,
+        );
+      }).where((s) => s.key.isNotEmpty).toList();
+      return (students: list, error: null);
+    } catch (_) {
+      return (
+        students: const <SchoolStudent>[],
+        error: 'Tidak terhubung ke Sekolah'
+      );
+    }
   }
 
   /// Kirim snapshot sekarang (fire-and-forget). Aman dipanggil dari mana

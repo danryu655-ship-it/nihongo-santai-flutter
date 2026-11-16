@@ -5,8 +5,8 @@ import '../services/store.dart';
 import '../widgets.dart';
 
 /// Pemilih identitas siswa — tampil sekali saat pertama pakai aplikasi,
-/// sebelum masuk tab. Wajib pilih supaya progres terkirim atas nama yang
-/// benar ke Sekolah Nihongo Santai.
+/// sebelum masuk tab. Siswa menulis namanya sendiri supaya progres
+/// terkirim atas nama yang benar ke Sekolah Nihongo Santai.
 ///
 /// Dipanggil dari lib/main.dart (_HomePageState.build) bila
 /// state.studentKey == null. Setelah disimpan, kirim snapshot awal
@@ -26,7 +26,6 @@ class StudentPickerScreen extends StatefulWidget {
 }
 
 class _StudentPickerScreenState extends State<StudentPickerScreen> {
-  String? _picked;
   final _nameCtrl = TextEditingController();
 
   @override
@@ -63,51 +62,19 @@ class _StudentPickerScreenState extends State<StudentPickerScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Pilih namamu, atau tulis nama baru kalau namamu belum ada — '
-              'progres belajarmu tercatat di Sekolah Nihongo Santai dan '
-              'gelarmu (N5–N1) tampil di sana.',
+              'Tulis namamu supaya progres belajarmu tercatat di '
+              'Sekolah Nihongo Santai dan gelarmu (N5–N1) tampil di sana.',
               style: TextStyle(fontSize: 14, color: Colors.black54),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            ...SchoolSyncService.students.map(
-              (s) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: AppCard(
-                  child: RadioListTile<String>(
-                    value: s.$1,
-                    groupValue: _picked,
-                    onChanged: (v) => setState(() => _picked = v),
-                    title: Text(
-                      s.$2,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: const Text('Kelas Sakura • mulai dari N5'),
-                    activeColor: brand,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Row(
-              children: [
-                Expanded(child: Divider()),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child:
-                      Text('atau', style: TextStyle(color: Colors.black54)),
-                ),
-                Expanded(child: Divider()),
-              ],
-            ),
-            const SizedBox(height: 12),
             AppCard(
               child: TextField(
                 controller: _nameCtrl,
                 maxLength: 30,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
-                  labelText: 'Tulis namamu (siswa baru)',
+                  labelText: 'Tulis namamu',
                   hintText: 'cth: Budi Santoso',
                 ),
               ),
@@ -122,19 +89,14 @@ class _StudentPickerScreenState extends State<StudentPickerScreen> {
             const SizedBox(height: 8),
             PrimaryButton(
               label: 'Simpan & mulai belajar',
-              onPressed: (_picked == null && _nameCtrl.text.trim().isEmpty)
+              onPressed: _nameCtrl.text.trim().isEmpty
                   ? null
                   : () {
                       final typed = _nameCtrl.text.trim();
-                      if (typed.isNotEmpty) {
-                        // Siswa baru: buat kunci unik dari nama ketikan.
-                        final key =
-                            SchoolSyncService.newStudentKey(typed);
-                        widget.state.setStudentKey(key);
-                        widget.state.setStudentName(typed);
-                      } else {
-                        widget.state.setStudentKey(_picked!);
-                      }
+                      // Buat kunci unik dari nama ketikan.
+                      final key = SchoolSyncService.newStudentKey(typed);
+                      widget.state.setStudentKey(key);
+                      widget.state.setStudentName(typed);
                       // Kirim baris awal (0 pelajaran, N5) ke Supabase.
                       SchoolSyncService.instance.syncNow(widget.state);
                       widget.onSaved();
