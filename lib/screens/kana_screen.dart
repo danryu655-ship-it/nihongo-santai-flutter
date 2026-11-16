@@ -337,8 +337,10 @@ class _QuizViewState extends State<_QuizView> {
     TtsService.instance.speak(_q.target.kana);
   }
 
-  void _next() {
+ void _next() {
     if (_index + 1 >= widget.quiz.questions.length) {
+      // Kuis Kana selesai — kirim XP terbaru ke Sekolah.
+      SchoolSyncService.instance.syncNow(widget.state);
       setState(() => _done = true);
     } else {
       setState(() {
