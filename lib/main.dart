@@ -93,9 +93,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_showSplash) return _buildSplash();
-    final pages = <Widget>[
+Widget build(BuildContext context) {
+  if (_showSplash) return _buildSplash();
+  // Belum pilih identitas siswa: tahan di layar pemilih dulu.
+  if (widget.state.studentKey == null) {
+    return StudentPickerScreen(
+      state: widget.state,
+      onSaved: () => setState(() {}),
+    );
+  }
+  final pages = <Widget>[
       TranslateScreen(state: widget.state),
       LearnScreen(state: widget.state),
       PhrasesScreen(state: widget.state),
