@@ -27,6 +27,19 @@ class StudentPickerScreen extends StatefulWidget {
 
 class _StudentPickerScreenState extends State<StudentPickerScreen> {
   String? _picked;
+  final _nameCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +63,9 @@ class _StudentPickerScreenState extends State<StudentPickerScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Pilih namamu supaya progres belajarmu tercatat di '
-              'Sekolah Nihongo Santai dan gelarmu (N5–N1) tampil di sana.',
+              'Pilih namamu, atau tulis nama baru kalau namamu belum ada — '
+              'progres belajarmu tercatat di Sekolah Nihongo Santai dan '
+              'gelarmu (N5–N1) tampil di sana.',
               style: TextStyle(fontSize: 14, color: Colors.black54),
               textAlign: TextAlign.center,
             ),
@@ -75,12 +89,52 @@ class _StudentPickerScreenState extends State<StudentPickerScreen> {
               ),
             ),
             const SizedBox(height: 8),
+            const Row(
+              children: [
+                Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child:
+                      Text('atau', style: TextStyle(color: Colors.black54)),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 12),
+            AppCard(
+              child: TextField(
+                controller: _nameCtrl,
+                maxLength: 30,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  labelText: 'Tulis namamu (siswa baru)',
+                  hintText: 'cth: Budi Santoso',
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Namamu langsung muncul di Sekolah Nihongo Santai, '
+              'gelarmu (N5–N1) mengikuti pelajaran yang sudah kamu selesaikan.',
+              style: TextStyle(fontSize: 12, color: Colors.black45),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
             PrimaryButton(
               label: 'Simpan & mulai belajar',
-              onPressed: _picked == null
+              onPressed: (_picked == null && _nameCtrl.text.trim().isEmpty)
                   ? null
                   : () {
-                      widget.state.setStudentKey(_picked!);
+                      final typed = _nameCtrl.text.trim();
+                      if (typed.isNotEmpty) {
+                        // Siswa baru: buat kunci unik dari nama ketikan.
+                        final key =
+                            SchoolSyncService.newStudentKey(typed);
+                        widget.state.setStudentKey(key);
+                        widget.state.setStudentName(typed);
+                      } else {
+                        widget.state.setStudentKey(_picked!);
+                      }
                       // Kirim baris awal (0 pelajaran, N5) ke Supabase.
                       SchoolSyncService.instance.syncNow(widget.state);
                       widget.onSaved();

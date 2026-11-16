@@ -34,7 +34,8 @@ class AppState extends ChangeNotifier {
   int quizBest = 0;
 
   // ---------- Identitas siswa (Sekolah) ----------
-  String? studentKey; // kunci siswa ('cecilia' | 'ferdi' | 'villia' | 'yusrizal'), null = belum pilih
+  String? studentKey; // kunci siswa ('cecilia' | ... atau dibuat dari nama, mis. 'budi-santoso-k7x2'), null = belum pilih
+  String? studentName; // nama tampil siswa baru (diketik sendiri); null = pakai daftar siswa lama
   bool schoolPending = false; // true = ada progres yang gagal terkirim
 
   // ---------- Kana ----------
@@ -61,6 +62,7 @@ class AppState extends ChangeNotifier {
     quizBest = _prefs.getInt('nsf_quiz_best_v1') ?? 0;
 
     studentKey = _prefs.getString('nsf_student_key');
+    studentName = _prefs.getString('nsf_student_name');
     schoolPending = _prefs.getBool('nsf_school_pending') ?? false;
 
     final kp = _json('nsf_kana_progress');
@@ -202,6 +204,13 @@ class AppState extends ChangeNotifier {
   void setStudentKey(String key) {
     studentKey = key;
     _save('nsf_student_key', key);
+    notifyListeners();
+  }
+
+  /// Nama tampil untuk siswa baru (registrasi mandiri).
+  void setStudentName(String name) {
+    studentName = name;
+    _save('nsf_student_name', name);
     notifyListeners();
   }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:http/http.dart' as http;
 
@@ -47,6 +48,26 @@ class SchoolSyncService {
     return key;
   }
 
+  /// Buat kunci unik dari nama yang diketik siswa baru.
+  /// Mis. 'Budi Santoso' -> 'budi-santoso-k7x2' (4 karakter acak di
+  /// belakang supaya dua orang bernama sama tidak bentrok di satu baris).
+  static String newStudentKey(String displayName) {
+    var slug = displayName
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    if (slug.isEmpty) slug = 'siswa';
+    if (slug.length > 20) {
+      slug = slug.substring(0, 20).replaceAll(RegExp(r'-+$'), '');
+    }
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    final rand = math.Random();
+    final suffix =
+        List.generate(4, (_) => chars[rand.nextInt(chars.length)]).join();
+    return '$slug-$suffix';
+  }
+
   /// Jumlah pelajaran per level — dari lib/data/lessons.dart
   /// (48 pelajaran: N5=19, N4=10, N3=8, N2=6, N1=5).
   ///
@@ -80,7 +101,10 @@ class SchoolSyncService {
     final key = s.studentKey!;
     return {
       'student_key': key,
-      'display_name': displayNameFor(key),
+      // Nama ketikan sendiri diutamakan; siswa lama pakai daftar di atas.
+      'display_name': (s.studentName?.trim().isNotEmpty ?? false)
+          ? s.studentName!.trim()
+          : displayNameFor(key),
       'level': computeLevel(s),
       'lessons_done': s.lessonsDone,
       'xp': s.xp,
