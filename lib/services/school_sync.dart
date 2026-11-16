@@ -2,9 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:http/http.dart' as http;
-
 import '../data/lessons.dart';
+import 'doh_http.dart';
 import 'store.dart';
 
 /// Satu baris daftar siswa dari Supabase (untuk tab Sekolah di aplikasi).
@@ -138,13 +137,14 @@ class SchoolSyncService {
       '$_supabaseUrl/rest/v1/$_table?select=student_key,display_name,level,lessons_done,xp&order=xp.desc',
     );
     try {
-      final res = await http.get(
-        uri,
+      final res = await requestWithDohFallback(
+        method: 'GET',
+        uri: uri,
         headers: {
           'apikey': supabaseAnonKey,
           'Authorization': 'Bearer $supabaseAnonKey',
         },
-      ).timeout(const Duration(seconds: 30));
+      );
       if (res.statusCode < 200 || res.statusCode >= 300) {
         return (
           students: const <SchoolStudent>[],
@@ -196,19 +196,18 @@ class SchoolSyncService {
       '$_supabaseUrl/rest/v1/$_table?on_conflict=student_key',
     );
     try {
-      final res = await http
-          .post(
-            uri,
-            headers: {
-              'apikey': supabaseAnonKey,
-              'Authorization': 'Bearer $supabaseAnonKey',
-              'Content-Type': 'application/json',
-              // Upsert: baris student_key yang sama ditimpa, bukan dobel.
-              'Prefer': 'resolution=merge-duplicates',
-            },
-            body: jsonEncode(buildPayload(s)),
-          )
-          .timeout(const Duration(seconds: 30));
+      final res = await requestWithDohFallback(
+        method: 'POST',
+        uri: uri,
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': 'Bearer $supabaseAnonKey',
+          'Content-Type': 'application/json',
+          // Upsert: baris student_key yang sama ditimpa, bukan dobel.
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: jsonEncode(buildPayload(s)),
+      );
       if (res.statusCode >= 200 && res.statusCode < 300) {
         s.clearSchoolPending();
       } else {
