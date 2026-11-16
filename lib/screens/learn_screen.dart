@@ -6,6 +6,7 @@ import '../data/konbini.dart';
 import '../data/lessons.dart';
 import '../data/quiz.dart';
 import '../services/store.dart';
+import '../services/school_sync.dart';
 import '../widgets.dart';
 import 'lesson_player.dart';
 
