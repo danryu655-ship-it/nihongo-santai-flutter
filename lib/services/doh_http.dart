@@ -12,9 +12,11 @@ import 'package:http/io_client.dart';
 /// berpengaruh bila port DoT ikut diblokir. Fallback ini menyelesaikan
 /// alamat lewat DNS-over-HTTPS (dns.google, cloudflare-dns.com, lalu
 /// lewat IP langsung 8.8.8.8 / 1.1.1.1 bila nama providernya sendiri
-/// tidak bisa di-resolve), lalu tersambung ke IP hasil resolve dengan
-/// SNI + verifikasi sertifikat memakai nama host aslinya
-/// (SecureSocket.secure), jadi keamanan TLS tidak diturunkan.
+/// tidak bisa di-resolve), lalu — bila semua DoH gagal — ke IP edge
+/// Supabase yang sudah diketahui (tanpa DNS sama sekali). Setelah IP
+/// didapat, aplikasi tersambung dengan SNI + verifikasi sertifikat
+/// memakai nama host aslinya (SecureSocket.secure), jadi keamanan TLS
+/// tidak diturunkan.
 ///
 /// Dipakai hanya bila panggilan langsung gagal cepat (SocketException /
 /// ClientException). Timeout dibiarkan apa adanya — itu jalur lambat,
@@ -106,7 +108,20 @@ Future<({int statusCode, String body})> requestViaDoh({
   http.Client? client,
 }) async {
   final host = uri.host;
-  final ips = await resolveIpViaDoh(host, client: client);
+  List<String> ips;
+  try {
+    ips = await resolveIpViaDoh(host, client: client);
+  } catch (_) {
+    // Semua jalur DoH gagal (kasus HP user: carrier memblokir
+    // dns.google, cloudflare-dns.com, 8.8.8.8, dan 1.1.1.1).
+    // Lapisan terakhir — hanya untuk host Supabase proyek sekolah:
+    // IP edge yang sudah diketahui, tanpa DNS sama sekali. IP ini
+    // diverifikasi via DoH pada 16 Nov 2026; Cloudflare bisa
+    // menggantinya sewaktu-waktu, jadi ini hanya cadangan terakhir
+    // (DoH tetap jalur utama bila ia jalan).
+    if (host != 'ipktwifbornanhrntvlb.supabase.co') rethrow;
+    ips = _supabaseFallbackIps;
+  }
   Object? lastError;
   for (final ip in ips) {
     try {
@@ -154,9 +169,15 @@ Future<({int statusCode, String body})> requestViaDoh({
     }
   }
   throw SocketException(
-    'DoH: resolve $host OK (${ips.join(', ')}), tapi koneksi ke IP gagal: $lastError',
+    'DoH: koneksi ke IP $host (${ips.join(', ')}) gagal: $lastError',
   );
 }
+
+/// IP edge Cloudflare untuk host Supabase proyek sekolah, cadangan
+/// terakhir bila semua jalur DoH gagal. Diverifikasi via DoH 16 Nov 2026.
+/// Cloudflare bisa mengganti IP ini; bila koneksi ke IP ini gagal juga,
+/// aplikasi perlu update (atau DoH harus jalan lagi).
+const _supabaseFallbackIps = ['104.18.38.10', '172.64.149.246'];
 
 /// Resolve host lewat DNS-over-HTTPS (JSON API). Kembalikan daftar IPv4.
 /// Publik agar bisa diuji langsung (tool/test_doh.dart).
