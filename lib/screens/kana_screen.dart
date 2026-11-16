@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../data/kana.dart';
 import '../services/store.dart';
+import '../services/school_sync.dart';
 import '../services/tts_service.dart';
 import '../widgets.dart';
 
