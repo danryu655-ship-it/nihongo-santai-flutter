@@ -6,6 +6,10 @@ import '../data/lessons.dart';
 import 'doh_http.dart';
 import 'store.dart';
 
+/// Versi aplikasi — tampil di pesan error tab Sekolah agar dari screenshot
+/// ketahuan versi berapa yang terpasang. WAJIB diubah tiap bump pubspec.
+const kAppVersion = '1.0.0+21';
+
 /// Satu baris daftar siswa dari Supabase (untuk tab Sekolah di aplikasi).
 class SchoolStudent {
   const SchoolStudent({
@@ -166,12 +170,13 @@ class SchoolSyncService {
     } on TimeoutException {
       return (
         students: const <SchoolStudent>[],
-        error: 'Koneksi ke Sekolah lambat (lebih dari 30 detik). Coba lagi.',
+        error:
+            'Koneksi ke Sekolah lambat (lebih dari 30 detik). Coba lagi.\n(v$kAppVersion)',
       );
     } catch (e) {
       return (
         students: const <SchoolStudent>[],
-        error: 'Tidak terhubung ke Sekolah.\n$e',
+        error: 'Tidak terhubung ke Sekolah. (v$kAppVersion)\n$e',
       );
     }
   }

@@ -3,20 +3,27 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 
 /// HTTP dengan fallback DNS-over-HTTPS (DoH).
 ///
 /// Latar: DNS sebagian provider seluler tidak bisa me-resolve subdomain
 /// Supabase ("Failed host lookup", errno 7) — DNS Pribadi pun tidak
 /// berpengaruh bila port DoT ikut diblokir. Fallback ini menyelesaikan
-/// alamat lewat DNS-over-HTTPS (dns.google, lalu cloudflare-dns.com),
-/// lalu tersambung ke IP hasil resolve dengan SNI + verifikasi sertifikat
-/// memakai nama host aslinya (SecureSocket.secure), jadi keamanan TLS
-/// tidak diturunkan.
+/// alamat lewat DNS-over-HTTPS (dns.google, cloudflare-dns.com, lalu
+/// lewat IP langsung 8.8.8.8 / 1.1.1.1 bila nama providernya sendiri
+/// tidak bisa di-resolve), lalu tersambung ke IP hasil resolve dengan
+/// SNI + verifikasi sertifikat memakai nama host aslinya
+/// (SecureSocket.secure), jadi keamanan TLS tidak diturunkan.
 ///
 /// Dipakai hanya bila panggilan langsung gagal cepat (SocketException /
 /// ClientException). Timeout dibiarkan apa adanya — itu jalur lambat,
 /// bukan DNS yang gagal.
+///
+/// Bila fallback ikut gagal, error yang dilempar menyebut tahap mana
+/// yang gagal (resolve / koneksi / baca respons) — supaya dari
+/// screenshot HP ketahuan persis di mana ia berhenti, bukan sekadar
+/// mengulang error DNS aslinya.
 /// [client] hanya untuk pengujian (tool/test_doh.dart): klien HTTP
 /// khusus, mis. yang memakai proxy VM. Aplikasi tidak pernah mengisinya.
 Future<({int statusCode, String body})> requestWithDohFallback({
@@ -78,9 +85,13 @@ Future<({int statusCode, String body})> _tryDohOrRethrow(
       body: body,
       client: client,
     );
-  } catch (_) {
-    // Fallback ikut gagal: laporkan error aslinya (untuk diagnostik).
-    throw original;
+  } catch (e) {
+    // Fallback ikut gagal: laporkan TAHAP fallback yang gagal, bukan
+    // sekadar mengulang error aslinya — dari screenshot HP harus
+    // ketahuan apakah berhentinya di resolve, koneksi, atau baca respons.
+    throw SocketException(
+      'DNS HP gagal ($original). Fallback DoH juga gagal: $e',
+    );
   }
 }
 
@@ -142,17 +153,20 @@ Future<({int statusCode, String body})> requestViaDoh({
       lastError = e;
     }
   }
-  throw lastError ?? const SocketException('DoH: tidak ada IP yang bisa dipakai');
+  throw SocketException(
+    'DoH: resolve $host OK (${ips.join(', ')}), tapi koneksi ke IP gagal: $lastError',
+  );
 }
 
 /// Resolve host lewat DNS-over-HTTPS (JSON API). Kembalikan daftar IPv4.
 /// Publik agar bisa diuji langsung (tool/test_doh.dart).
 Future<List<String>> resolveIpViaDoh(String host, {http.Client? client}) async {
-  const providers = [
+  // 1. Provider lewat nama host (butuh DNS untuk nama providernya).
+  const hostProviders = [
     'https://dns.google/resolve',
     'https://cloudflare-dns.com/dns-query',
   ];
-  for (final base in providers) {
+  for (final base in hostProviders) {
     try {
       final uri = Uri.parse('$base?name=$host&type=A');
       final res = await (client == null
@@ -160,20 +174,61 @@ Future<List<String>> resolveIpViaDoh(String host, {http.Client? client}) async {
               : client.get(uri, headers: {'Accept': 'application/dns-json'}))
           .timeout(const Duration(seconds: 10));
       if (res.statusCode != 200) continue;
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final answers = (data['Answer'] as List?) ?? const [];
-      final ips = <String>[];
-      for (final a in answers) {
-        final m = a as Map<String, dynamic>;
-        final ip = m['data'] as String?;
-        if (m['type'] == 1 && ip != null && ip.isNotEmpty) ips.add(ip);
-      }
+      final ips = _ipsFromDohJson(res.body);
       if (ips.isNotEmpty) return ips;
     } catch (_) {
       // Coba provider DoH berikutnya.
     }
   }
-  throw const SocketException('DoH: tidak bisa me-resolve host');
+  // 2. Provider lewat IP langsung (tanpa DNS sama sekali — untuk HP yang
+  // DNS-nya bahkan tidak bisa me-resolve dns.google).
+  // Keamanan: sertifikat sengaja tidak divalidasi di sini karena host-nya
+  // IP, bukan nama. Ini tetap aman karena IP hasil resolve ini HANYA
+  // dipakai untuk koneksi TLS berikutnya yang tetap memvalidasi sertifikat
+  // + SNI memakai nama host Supabase (SecureSocket.secure) — IP palsu
+  // dari penyadap akan gagal di tahap itu.
+  final ipClient = IOClient(
+    HttpClient()..badCertificateCallback = (_, __, ___) => true,
+  );
+  try {
+    const ipProviders = [
+      'https://8.8.8.8/resolve',
+      'https://1.1.1.1/dns-query',
+    ];
+    for (final base in ipProviders) {
+      try {
+        final res = await ipClient
+            .get(
+              Uri.parse('$base?name=$host&type=A'),
+              headers: {'Accept': 'application/dns-json'},
+            )
+            .timeout(const Duration(seconds: 10));
+        if (res.statusCode != 200) continue;
+        final ips = _ipsFromDohJson(res.body);
+        if (ips.isNotEmpty) return ips;
+      } catch (_) {
+        // Coba provider DoH berikutnya.
+      }
+    }
+  } finally {
+    ipClient.close();
+  }
+  throw const SocketException(
+    'DoH: tidak bisa me-resolve host (dns.google + cloudflare-dns.com + 8.8.8.8 + 1.1.1.1)',
+  );
+}
+
+/// Ambil daftar IPv4 (type 1) dari jawaban JSON DNS-over-HTTPS.
+List<String> _ipsFromDohJson(String body) {
+  final data = jsonDecode(body) as Map<String, dynamic>;
+  final answers = (data['Answer'] as List?) ?? const [];
+  final ips = <String>[];
+  for (final a in answers) {
+    final m = a as Map<String, dynamic>;
+    final ip = m['data'] as String?;
+    if (m['type'] == 1 && ip != null && ip.isNotEmpty) ips.add(ip);
+  }
+  return ips;
 }
 
 /// Urai respons HTTP/1.1 mentah (status + header + body; dukung chunked).
