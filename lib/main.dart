@@ -7,12 +7,17 @@ import 'screens/learn_screen.dart';
 import 'screens/phrases_screen.dart';
 import 'screens/translate_screen.dart';
 import 'services/store.dart';
+import 'screens/student_picker.dart';
+import 'services/school_sync.dart';
 import 'widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final startedAt = DateTime.now();
   final state = await AppState.load();
+  // Kirim antrean progres yang tertunda saat offline kemarin.
+  // Tanpa await: tidak menghambat aplikasi dibuka.
+  SchoolSyncService.instance.flushPending(state);
   runApp(NihongoApp(state: state, startedAt: startedAt));
 }
 
