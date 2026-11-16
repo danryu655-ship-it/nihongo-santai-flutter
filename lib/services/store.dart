@@ -32,6 +32,10 @@ class AppState extends ChangeNotifier {
   List<int> konbiniDone = []; // indeks konbiniItems
   int quizBest = 0;
 
+  // ---------- Identitas siswa (Sekolah) ----------
+  String? studentKey; // kunci siswa ('cecilia' | 'ferdi' | 'villia' | 'yusrizal'), null = belum pilih
+  bool schoolPending = false; // true = ada progres yang gagal terkirim
+
   // ---------- Kana ----------
   Map<String, double> kanaProgress = {}; // huruf kana -> penguasaan 0..1
 
@@ -54,6 +58,9 @@ class AppState extends ChangeNotifier {
     forceOffline = _prefs.getBool('nsf_force_offline') ?? false;
     konbiniDone = _intList('nsf_konbini_v1');
     quizBest = _prefs.getInt('nsf_quiz_best_v1') ?? 0;
+
+    studentKey = _prefs.getString('nsf_student_key');
+    schoolPending = _prefs.getBool('nsf_school_pending') ?? false;
 
     final kp = _json('nsf_kana_progress');
     kanaProgress = kp.map(
@@ -189,6 +196,27 @@ class AppState extends ChangeNotifier {
 
   // ---------- Kana ----------
   double kanaMastery(String kana) => kanaProgress[kana] ?? 0;
+
+    // ---------- Identitas siswa (Sekolah) ----------
+  void setStudentKey(String key) {
+    studentKey = key;
+    _save('nsf_student_key', key);
+    notifyListeners();
+  }
+
+  void markSchoolPending() {
+    if (!schoolPending) {
+      schoolPending = true;
+      _save('nsf_school_pending', true);
+    }
+  }
+
+  void clearSchoolPending() {
+    if (schoolPending) {
+      schoolPending = false;
+      _save('nsf_school_pending', false);
+    }
+  }
 
   /// Jawaban kuis benar: penguasaan huruf naik +0.25 (maks 1).
   /// Jawaban salah: turun -0.1 (min 0).
