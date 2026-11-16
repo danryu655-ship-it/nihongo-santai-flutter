@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/school_sync.dart';
+
 
 /// Semua penyimpanan aplikasi memakai prefix `nsf_`.
 /// Data versi WebView lama (tbo_*/nst_*) TIDAK bisa pindah — Flutter mulai dari nol.
