@@ -2,13 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:http/http.dart' as http;
+
 import '../data/lessons.dart';
 import 'doh_http.dart';
 import 'store.dart';
 
 /// Versi aplikasi — tampil di pesan error tab Sekolah agar dari screenshot
 /// ketahuan versi berapa yang terpasang. WAJIB diubah tiap bump pubspec.
-const kAppVersion = '1.0.0+22';
+const kAppVersion = '1.0.0+23';
 
 /// Satu baris daftar siswa dari Supabase (untuk tab Sekolah di aplikasi).
 class SchoolStudent {
@@ -52,6 +54,22 @@ class SchoolSyncService {
   /// > API > Project API keys > salin key "Publishable".
   /// JANGAN pernah isi service_role key di aplikasi.
   static const String supabaseAnonKey = 'sb_publishable_yQKdmQJ5HRM6o0mcP6ravQ_5ShHBcUm';
+
+  /// Relay Google Apps Script "Sekolah Relay" (akun danryu655@gmail.com,
+  /// deploy 16 Nov 2026, Execute as Me, akses Anyone).
+  /// HP user tidak bisa mencapai Supabase langsung (DNS carrier gagal +
+  /// koneksi TCP ke IP Cloudflare ditolak sistem HP), jadi aplikasi bicara
+  /// dulu ke relay Google (script.google.com — bisa dijangkau HP), dan
+  /// relay yang meneruskan ke Supabase. Token bersama dicek oleh script.
+  /// Bila relay gagal, aplikasi jatuh ke jalur langsung ke Supabase
+  /// (dengan fallback DoH + IP seperti sebelumnya).
+  static const String _relayUrl =
+      'https://script.google.com/macros/s/AKfycbwYoWsdcckU2-0UI2BvN3-MoEpJfPMM-jyiP7l5h3B4rQrztXd_D9GcbSnSrD3Otuiu/exec';
+  static const String _relayToken = '33e54df7486a5609745afb48326d5616';
+
+  /// Batas waktu panggilan relay — Apps Script bisa cold start (lambat
+  /// di panggilan pertama), jadi lebih longgar dari jalur langsung.
+  static const Duration _relayTimeout = Duration(seconds: 60);
 
   /// Daftar siswa Sekolah Nihongo Santai.
   /// key = student_key di Supabase, name = display_name.
@@ -133,10 +151,17 @@ class SchoolSyncService {
     };
   }
 
-  /// Ambil daftar siswa terbaru dari Supabase (untuk tab Sekolah).
+  /// Ambil daftar siswa terbaru (untuk tab Sekolah).
+  /// Urutan: relay Google dulu, bila gagal jatuh ke Supabase langsung.
   /// Tidak pernah throw: gagal -> daftar kosong + pesan error.
   Future<({List<SchoolStudent> students, String? error})>
       fetchRoster() async {
+    try {
+      final relay = await _fetchRosterViaRelay();
+      if (relay != null) return (students: relay, error: null);
+    } catch (_) {
+      // Jatuh ke jalur langsung.
+    }
     final uri = Uri.parse(
       '$_supabaseUrl/rest/v1/$_table?select=student_key,display_name,level,lessons_done,xp&order=xp.desc',
     );
@@ -155,23 +180,12 @@ class SchoolSyncService {
           error: 'Supabase ${res.statusCode}'
         );
       }
-      final raw = jsonDecode(res.body) as List;
-      final list = raw.map((r) {
-        final m = r as Map<String, dynamic>;
-        return SchoolStudent(
-          key: (m['student_key'] as String?) ?? '',
-          name: (m['display_name'] as String?) ?? '',
-          level: (m['level'] as String?) ?? 'N5',
-          lessonsDone: (m['lessons_done'] as num?)?.toInt() ?? 0,
-          xp: (m['xp'] as num?)?.toInt() ?? 0,
-        );
-      }).where((s) => s.key.isNotEmpty).toList();
-      return (students: list, error: null);
+      return (students: _parseRoster(res.body), error: null);
     } on TimeoutException {
       return (
         students: const <SchoolStudent>[],
         error:
-            'Koneksi ke Sekolah lambat (lebih dari 30 detik). Coba lagi.\n(v$kAppVersion)',
+            'Koneksi ke Sekolah lambat (melebihi batas waktu). Coba lagi.\n(v$kAppVersion)',
       );
     } catch (e) {
       return (
@@ -179,6 +193,32 @@ class SchoolSyncService {
         error: 'Tidak terhubung ke Sekolah. (v$kAppVersion)\n$e',
       );
     }
+  }
+
+  /// Roster lewat relay Google Apps Script. Kembalikan null bila relay
+  /// gagal / menolak (pemanggil lalu mencoba jalur langsung).
+  Future<List<SchoolStudent>?> _fetchRosterViaRelay() async {
+    final uri = Uri.parse('$_relayUrl?action=roster&token=$_relayToken');
+    final res = await http.get(uri).timeout(_relayTimeout);
+    if (res.statusCode < 200 || res.statusCode >= 300) return null;
+    final decoded = jsonDecode(res.body);
+    if (decoded is Map && decoded['ok'] == false) return null;
+    return _parseRoster(res.body);
+  }
+
+  /// Urai jawaban roster (array JSON Supabase / relay) ke daftar siswa.
+  List<SchoolStudent> _parseRoster(String body) {
+    final raw = jsonDecode(body) as List;
+    return raw.map((r) {
+      final m = r as Map<String, dynamic>;
+      return SchoolStudent(
+        key: (m['student_key'] as String?) ?? '',
+        name: (m['display_name'] as String?) ?? '',
+        level: (m['level'] as String?) ?? 'N5',
+        lessonsDone: (m['lessons_done'] as num?)?.toInt() ?? 0,
+        xp: (m['xp'] as num?)?.toInt() ?? 0,
+      );
+    }).where((s) => s.key.isNotEmpty).toList();
   }
 
   /// Kirim snapshot sekarang (fire-and-forget). Aman dipanggil dari mana
@@ -197,6 +237,16 @@ class SchoolSyncService {
   }
 
   Future<void> _send(AppState s) async {
+    // 1. Relay dulu (Google Apps Script — bisa dijangkau HP).
+    try {
+      if (await _sendViaRelay(s)) {
+        s.clearSchoolPending();
+        return;
+      }
+    } catch (_) {
+      // Jatuh ke jalur langsung.
+    }
+    // 2. Jalur langsung ke Supabase (dengan fallback DoH + IP).
     final uri = Uri.parse(
       '$_supabaseUrl/rest/v1/$_table?on_conflict=student_key',
     );
@@ -222,5 +272,24 @@ class SchoolSyncService {
       // Offline / timeout / Supabase tidak terjangkau: antre saja.
       s.markSchoolPending();
     }
+  }
+
+  /// Kirim progres lewat relay (GET — agar redirect 302 Apps Script
+  /// tidak menghilangkan body). Kembalikan true bila relay menjawab ok.
+  Future<bool> _sendViaRelay(AppState s) async {
+    final p = buildPayload(s);
+    final uri = Uri.parse(_relayUrl).replace(queryParameters: {
+      'action': 'upsert',
+      'token': _relayToken,
+      'student_key': p['student_key'] as String,
+      'display_name': p['display_name'] as String,
+      'level': p['level'] as String,
+      'lessons_done': '${p['lessons_done']}',
+      'xp': '${p['xp']}',
+    });
+    final res = await http.get(uri).timeout(_relayTimeout);
+    if (res.statusCode < 200 || res.statusCode >= 300) return false;
+    final decoded = jsonDecode(res.body);
+    return decoded is Map && decoded['ok'] == true;
   }
 }
