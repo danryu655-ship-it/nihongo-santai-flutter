@@ -5,10 +5,8 @@ import 'package:flutter/material.dart';
 import 'screens/kana_screen.dart';
 import 'screens/learn_screen.dart';
 import 'screens/phrases_screen.dart';
-import 'screens/school_screen.dart';
 import 'screens/translate_screen.dart';
 import 'services/store.dart';
-import 'screens/student_picker.dart';
 import 'services/school_sync.dart';
 import 'widgets.dart';
 
@@ -96,19 +94,15 @@ class _HomePageState extends State<HomePage> {
   @override
 Widget build(BuildContext context) {
   if (_showSplash) return _buildSplash();
-  // Belum pilih identitas siswa: tahan di layar pemilih dulu.
-  if (widget.state.studentKey == null) {
-    return StudentPickerScreen(
-      state: widget.state,
-      onSaved: () => setState(() {}),
-    );
-  }
+  // Tab Sekolah dihapus 16 Nov 2026 (v1.0.0+24): HP user tidak bisa
+  // mencapai Supabase maupun relay Google — tab hanya menampilkan error.
+  // Sinkronisasi progres tetap jalan diam-diam di latar (tanpa error
+  // di layar), jadi bila jaringan HP membaik datanya tetap tersimpan.
   final pages = <Widget>[
       TranslateScreen(state: widget.state),
       LearnScreen(state: widget.state),
       PhrasesScreen(state: widget.state),
       KanaScreen(state: widget.state),
-      SchoolScreen(state: widget.state),
     ];
     return Scaffold(
       body: SafeArea(
@@ -148,10 +142,6 @@ Widget build(BuildContext context) {
               ),
             ),
             label: 'Kana',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.groups),
-            label: 'Sekolah',
           ),
         ],
       ),

@@ -10,7 +10,7 @@ import 'store.dart';
 
 /// Versi aplikasi — tampil di pesan error tab Sekolah agar dari screenshot
 /// ketahuan versi berapa yang terpasang. WAJIB diubah tiap bump pubspec.
-const kAppVersion = '1.0.0+23';
+const kAppVersion = '1.0.0+24';
 
 /// Satu baris daftar siswa dari Supabase (untuk tab Sekolah di aplikasi).
 class SchoolStudent {
