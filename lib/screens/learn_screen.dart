@@ -419,6 +419,8 @@ class _QuizViewState extends State<_QuizView> {
   void _next() {
     if (_idx + 1 >= _qs.length) {
       widget.state.setQuizBest(_score);
+      // Kuis selesai — kirim snapshot progres terbaru ke Sekolah.
+      SchoolSyncService.instance.syncNow(widget.state);
       setState(() => _finished = true);
     } else {
       setState(() {
