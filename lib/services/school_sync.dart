@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -143,7 +144,7 @@ class SchoolSyncService {
           'apikey': supabaseAnonKey,
           'Authorization': 'Bearer $supabaseAnonKey',
         },
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
       if (res.statusCode < 200 || res.statusCode >= 300) {
         return (
           students: const <SchoolStudent>[],
@@ -162,10 +163,15 @@ class SchoolSyncService {
         );
       }).where((s) => s.key.isNotEmpty).toList();
       return (students: list, error: null);
+    } on TimeoutException {
+      return (
+        students: const <SchoolStudent>[],
+        error: 'Koneksi ke Sekolah lambat (lebih dari 30 detik). Coba lagi.',
+      );
     } catch (_) {
       return (
         students: const <SchoolStudent>[],
-        error: 'Tidak terhubung ke Sekolah'
+        error: 'Tidak terhubung ke Sekolah. Periksa internetmu lalu coba lagi.',
       );
     }
   }
@@ -202,7 +208,7 @@ class SchoolSyncService {
             },
             body: jsonEncode(buildPayload(s)),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       if (res.statusCode >= 200 && res.statusCode < 300) {
         s.clearSchoolPending();
       } else {
