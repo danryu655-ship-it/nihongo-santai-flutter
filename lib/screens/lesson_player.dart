@@ -360,6 +360,8 @@ class _LessonPlayerPageState extends State<LessonPlayerPage> {
         widget.state.addXp(20);
       }
       widget.state.completeLesson(widget.lesson.id);
+      // Kirim progres ke Sekolah (fire-and-forget; gagal = antre, tidak crash).
+      SchoolSyncService.instance.syncNow(widget.state);
     }
     setState(() {
       _finished = true;
