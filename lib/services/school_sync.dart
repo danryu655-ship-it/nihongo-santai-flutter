@@ -168,10 +168,10 @@ class SchoolSyncService {
         students: const <SchoolStudent>[],
         error: 'Koneksi ke Sekolah lambat (lebih dari 30 detik). Coba lagi.',
       );
-    } catch (_) {
+    } catch (e) {
       return (
         students: const <SchoolStudent>[],
-        error: 'Tidak terhubung ke Sekolah. Periksa internetmu lalu coba lagi.',
+        error: 'Tidak terhubung ke Sekolah.\n$e',
       );
     }
   }
