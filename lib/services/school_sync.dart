@@ -29,7 +29,7 @@ class SchoolSyncService {
   /// Dashboard > pilih project school_progress > Settings (gerigi kiri bawah)
   /// > API > Project API keys > salin key "Publishable".
   /// JANGAN pernah isi service_role key di aplikasi.
-  static const String supabaseAnonKey = 'ISI_DARI_DASHBOARD_SUPABASE';
+  static const String supabaseAnonKey = 'sb_publishable_yQKdmQJ5HRM6o0mcP6ravQ_5ShHBcUm';
 
   /// Daftar siswa Sekolah Nihongo Santai.
   /// key = student_key di Supabase, name = display_name.
