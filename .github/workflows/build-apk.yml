@@ -1,12 +1,6 @@
-# Build APK Nihongo Santai di GitHub Actions (pengganti build lokal).
-# Cara pakai:
-#   1. Naikkan version di pubspec.yaml 1.0.0+24 → 1.0.0+25
-#   2. Commit + push
-#   3. git tag v1.0.0+25 && git push origin v1.0.0+25
-#   4. APK otomatis muncul di GitHub Releases repo ini (5-10 menit)
-# Bisa juga dijalankan manual: tab Actions > Build APK > Run workflow.
-# Signing: memakai debug key (sesuai android/app/build.gradle.kts),
-# jadi tanpa secret/keystore — sama seperti APK v1.0.0+24 yang sudah di APKPure.
+git tag v1.0.0+25
+git push origin v1.0.0+25
+
 name: Build APK
 
 on:
