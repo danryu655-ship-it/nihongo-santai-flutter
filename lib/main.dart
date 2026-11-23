@@ -97,9 +97,9 @@ Widget build(BuildContext context) {
   // Sinkronisasi progres tetap jalan diam-diam di latar (tanpa error
   // di layar), jadi bila jaringan HP membaik datanya tetap tersimpan.
   final pages = <Widget>[
-      TranslateScreen(state: widget.state),
       LearnScreen(state: widget.state),
       PhrasesScreen(state: widget.state),
+      TranslateScreen(state: widget.state),
       KanaScreen(state: widget.state),
     ];
     return Scaffold(
@@ -119,16 +119,16 @@ Widget build(BuildContext context) {
         unselectedItemColor: Colors.grey.shade600,
         items: [
           const BottomNavigationBarItem(
-            icon: Icon(Icons.translate),
-            label: 'Terjemah',
-          ),
-          const BottomNavigationBarItem(
             icon: Icon(Icons.school),
             label: 'Belajar',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             label: 'Frasa',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.translate),
+            label: 'Terjemah',
           ),
           BottomNavigationBarItem(
             icon: Text(
