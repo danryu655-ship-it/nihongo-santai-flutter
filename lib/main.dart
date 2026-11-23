@@ -9,6 +9,7 @@ import 'screens/translate_screen.dart';
 import 'services/store.dart';
 import 'services/school_sync.dart';
 import 'widgets.dart';
+import 'services/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
