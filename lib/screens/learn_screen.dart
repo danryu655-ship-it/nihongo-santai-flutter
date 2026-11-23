@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/konbini.dart';
 import '../data/lessons.dart';
 import '../data/quiz.dart';
+import '../data/dictionary.dart';
 import '../services/store.dart';
 import '../services/school_sync.dart';
 import '../widgets.dart';
@@ -136,11 +137,17 @@ class _LearnScreenState extends State<LearnScreen> {
         const SizedBox(height: 10),
         AppCard(
           onTap: () {
+            final cards = (List.of(dictionary)..shuffle()).take(10).map((e) => FlashcardItem(
+                kanjiOrKana: e.japanese,
+                romaji: e.romaji,
+                arti: e.indonesian,
+              )).toList();
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const FlashcardScreen(
+                builder: (context) => FlashcardScreen(
                   kategori: 'Kosakata Harian',
+                  customCards: cards,
                 ),
               ),
             );
