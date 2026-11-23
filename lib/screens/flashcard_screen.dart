@@ -5,17 +5,18 @@ class FlashcardItem {
   final String kanjiOrKana;
   final String romaji;
   final String arti;
-  final String kalimatKasual;
-  final String kalimatSopan;
-  final String konteks;
+  final String? kalimatKasual;
+  final String? kalimatSopan;
+  final String? konteks;
 
   FlashcardItem({
     required this.kanjiOrKana,
     required this.romaji,
     required this.arti,
-    required this.kalimatKasual,
-    required this.kalimatSopan,
-    required this.konteks,
+    this.kalimatKasual,
+    this.kalimatSopan,
+    this.konteks,
+
   });
 }
 
