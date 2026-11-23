@@ -9,6 +9,7 @@ import '../services/store.dart';
 import '../services/school_sync.dart';
 import '../widgets.dart';
 import 'lesson_player.dart';
+import 'flashcard_screen.dart';
 
 class LearnScreen extends StatefulWidget {
   const LearnScreen({super.key, required this.state});
@@ -117,7 +118,38 @@ class _LearnScreenState extends State<LearnScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: [const SizedBox(height: 10),
+                    AppCard(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FlashcardScreen(
+                              kategori: 'Kosakata Harian',
+                            ),
+                          ),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          const Text('🃏', style: TextStyle(fontSize: 32)),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Flashcard',
+                                    style: TextStyle(
+                                        fontSize: 18, fontWeight: FontWeight.bold)),
+                                Text('Kosakata Harian • ketuk untuk membalik',
+                                    style: TextStyle(color: Colors.grey, fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, color: Colors.grey),
+                        ],
+                      ),
+                    ),
                     const Text('Kuis Travel N5',
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
