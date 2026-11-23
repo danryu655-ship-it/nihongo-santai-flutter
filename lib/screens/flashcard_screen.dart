@@ -421,10 +421,15 @@ class _FlashcardScreenState extends State<FlashcardScreen>
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: _accent.withOpacity(0.35)),
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
             Text(
               '${item.kanjiOrKana} (${item.romaji})',
               style: TextStyle(color: mutedText, fontSize: 14),
@@ -483,8 +488,11 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                 ),
               ],
             ),
-          ],
-        ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
