@@ -615,11 +615,13 @@ class _QuickQuizScreenState extends State<QuickQuizScreen> {
         elevation: 0,
         title: const Text('Kuis Kilat (5 Soal)'),
       ),
-      body: Padding(
+      body: SafeArea(
+      child: Padding(
         padding: const EdgeInsets.all(20),
-        child: _isFinished
-            ? _buildResultView(surfaceColor, textColor, accent)
-            : _buildQuestionView(surfaceColor, textColor, accent),
+          child: _isFinished
+              ? _buildResultView(surfaceColor, textColor, accent)
+              : _buildQuestionView(surfaceColor, textColor, accent),
+         ),
       ),
     );
   }
