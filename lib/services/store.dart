@@ -28,6 +28,7 @@ class AppState extends ChangeNotifier {
   List<String> favs = []; // kunci japanese
   List<String> recents = []; // kunci japanese, maks 8
   bool forceOffline = false;
+  bool softDark = true; // default gelap lembut, seperti flashcard
 
   // ---------- Belajar ----------
   List<int> konbiniDone = []; // indeks konbiniItems
@@ -58,6 +59,8 @@ class AppState extends ChangeNotifier {
     favs = _strList('nsf_fav');
     recents = _strList('nsf_recent');
     forceOffline = _prefs.getBool('nsf_force_offline') ?? false;
+    softDark = _prefs.getBool('nsf_soft_dark') ?? true;
+
     konbiniDone = _intList('nsf_konbini_v1');
     quizBest = _prefs.getInt('nsf_quiz_best_v1') ?? 0;
 
@@ -177,6 +180,11 @@ class AppState extends ChangeNotifier {
     _save('nsf_force_offline', v);
     notifyListeners();
   }
+  void setSoftDark(bool v) {
+  softDark = v;
+  _save('nsf_soft_dark', v);
+  notifyListeners();
+}
 
   // ---------- Konbini / kuis ----------
   void toggleKonbini(int i) {
