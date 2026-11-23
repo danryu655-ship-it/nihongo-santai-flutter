@@ -5,8 +5,9 @@
 #   3. git tag v1.0.0+25 && git push origin v1.0.0+25
 #   4. APK otomatis muncul di GitHub Releases repo ini (5-10 menit)
 # Bisa juga dijalankan manual: tab Actions > Build APK > Run workflow.
-# Signing: memakai debug key (sesuai android/app/build.gradle.kts),
-# jadi tanpa secret/keystore — sama seperti APK v1.0.0+24 yang sudah di APKPure.
+# Signing: memakai release keystore dari secret repo (ANDROID_KEYSTORE_*),
+# jadi semua rilis punya tanda tangan yang sama dan bisa di-update langsung.
+# Tanpa secret itu, build tetap jalan dengan debug key (fallback di build.gradle.kts).
 name: Build APK
 
 on:
@@ -41,6 +42,16 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Setup release keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/nihongosantai-release.keystore
+          cat > android/key.properties << 'EOF'
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=nihongosantai-release.keystore
+          EOF
 
       - name: Build release APK
         run: flutter build apk --release
