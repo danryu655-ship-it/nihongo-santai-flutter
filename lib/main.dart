@@ -266,6 +266,16 @@ Widget build(BuildContext context) {
                       ],
                     ),
                   ),
+                  IconButton(
+                    icon: Icon(
+                      s.softDark
+                          ? Icons.light_mode_outlined
+                          : Icons.dark_mode_outlined,
+                      color: Colors.white,
+                    ),
+                    tooltip: s.softDark ? 'Mode Terang Lembut' : 'Mode Gelap Lembut',
+                    onPressed: () => s.setSoftDark(!s.softDark),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
