@@ -440,27 +440,32 @@ class _FlashcardScreenState extends State<FlashcardScreen>
             ),
             const SizedBox(height: 16),
 
-            // Bentuk Kasual
+          // Bentuk Kasual
+          if (item.kalimatKasual != null) ...[
             _buildStyleBox(
               label: 'Kasual (Sehari-hari / Teman)',
-              text: item.kalimatKasual,
+              text: item.kalimatKasual!,
               bg: _isSoftDark ? const Color(0xFF1C1B1A) : const Color(0xFFF7F5F0),
               textColor: textColor,
               badgeColor: const Color(0xFF6B9AC4),
             ),
             const SizedBox(height: 10),
+          ],
 
-            // Bentuk Sopan (Desu/Masu)
+          // Bentuk Sopan (Desu/Masu)
+          if (item.kalimatSopan != null) ...[
             _buildStyleBox(
               label: 'Sopan (-masu / -desu)',
-              text: item.kalimatSopan,
+              text: item.kalimatSopan!,
               bg: _isSoftDark ? const Color(0xFF1C1B1A) : const Color(0xFFF7F5F0),
               textColor: textColor,
               badgeColor: const Color(0xFF7AA874),
             ),
             const SizedBox(height: 14),
+          ],
 
-            // Konteks Pemakaian
+          // Konteks Pemakaian
+          if (item.konteks != null)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -468,7 +473,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    item.konteks,
+                    item.konteks!,
                     style: TextStyle(
                       color: mutedText,
                       fontSize: 13,
