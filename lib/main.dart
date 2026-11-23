@@ -31,19 +31,16 @@ class NihongoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Nihongo Santai',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: brand),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF6F7FB),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: brand,
-          foregroundColor: Colors.white,
-        ),
-      ),
-      home: HomePage(state: state, startedAt: startedAt),
+    return ListenableBuilder(
+      listenable: state,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'Nihongo Santai',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.buildTheme(state.softDark),
+          home: HomePage(state: state, startedAt: startedAt),
+        );
+      },
     );
   }
 }
