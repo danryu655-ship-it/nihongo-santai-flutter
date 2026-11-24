@@ -34,6 +34,10 @@ class AppState extends ChangeNotifier {
   List<int> konbiniDone = []; // indeks konbiniItems
   int quizBest = 0;
 
+  // ---------- Materi ----------
+  List<String> kanjiHafal = []; // kanji yang ditandai hafal
+  List<String> kosakataHafal = []; // kunci japanese yang ditandai hafal
+
   // ---------- Identitas siswa (Sekolah) ----------
   String? studentKey; // kunci siswa ('cecilia' | ... atau dibuat dari nama, mis. 'budi-santoso-k7x2'), null = belum pilih
   String? studentName; // nama tampil siswa baru (diketik sendiri); null = pakai daftar siswa lama
@@ -63,6 +67,9 @@ class AppState extends ChangeNotifier {
 
     konbiniDone = _intList('nsf_konbini_v1');
     quizBest = _prefs.getInt('nsf_quiz_best_v1') ?? 0;
+
+    kanjiHafal = _strList('nsf_kanji_hafal');
+    kosakataHafal = _strList('nsf_kosakata_hafal');
 
     studentKey = _prefs.getString('nsf_student_key');
     studentName = _prefs.getString('nsf_student_name');
@@ -203,6 +210,31 @@ class AppState extends ChangeNotifier {
       _save('nsf_quiz_best_v1', score);
       notifyListeners();
     }
+  }
+
+  // ---------- Materi: hafal ----------
+  bool isKanjiHafal(String kanji) => kanjiHafal.contains(kanji);
+
+  void toggleKanjiHafal(String kanji) {
+    if (kanjiHafal.contains(kanji)) {
+      kanjiHafal.remove(kanji);
+    } else {
+      kanjiHafal.add(kanji);
+    }
+    _save('nsf_kanji_hafal', jsonEncode(kanjiHafal));
+    notifyListeners();
+  }
+
+  bool isKosakataHafal(String japanese) => kosakataHafal.contains(japanese);
+
+  void toggleKosakataHafal(String japanese) {
+    if (kosakataHafal.contains(japanese)) {
+      kosakataHafal.remove(japanese);
+    } else {
+      kosakataHafal.add(japanese);
+    }
+    _save('nsf_kosakata_hafal', jsonEncode(kosakataHafal));
+    notifyListeners();
   }
 
   // ---------- Kana ----------
