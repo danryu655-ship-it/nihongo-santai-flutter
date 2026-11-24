@@ -103,45 +103,92 @@ Widget build(BuildContext context) {
       KanaScreen(state: widget.state),
     ];
     return Scaffold(
+      extendBody: true,
       body: SafeArea(
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(child: pages[_tab]),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 96),
+                child: pages[_tab],
+              ),
+            ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _tab,
-        onTap: (i) => setState(() => _tab = i),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: brand,
-        unselectedItemColor: Colors.grey.shade600,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.school),
-            label: 'Belajar',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Frasa',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.translate),
-            label: 'Terjemah',
-          ),
-          BottomNavigationBarItem(
-            icon: Text(
-              'あ',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: _tab == 3 ? brand : Colors.grey.shade600,
-              ),
+      bottomNavigationBar: _buildFloatingNav(),
+    );
+  }
+
+  /// Navbar mengambang ala Goukaku: pil bulat dengan bayangan,
+  /// tab aktif berpil gelap. Melayang di atas konten (extendBody).
+  Widget _buildFloatingNav() {
+    final dark = widget.state.softDark;
+    final bg = dark ? const Color(0xFF282624) : Colors.white;
+    final idle = dark ? Colors.grey.shade400 : Colors.grey.shade600;
+    const activeBg = Color(0xFF3D5A73);
+    const labels = ['Belajar', 'Frasa', 'Terjemah', 'Kana'];
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
-            label: 'Kana',
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          children: [
+            for (var i = 0; i < labels.length; i++)
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _tab = i),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _tab == i ? activeBg : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (i == 3)
+                          Text('あ',
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: _tab == i ? Colors.white : idle))
+                        else
+                          Icon(
+                            i == 0
+                                ? Icons.school
+                                : i == 1
+                                    ? Icons.chat_bubble_outline
+                                    : Icons.translate,
+                            color: _tab == i ? Colors.white : idle,
+                          ),
+                        const SizedBox(height: 2),
+                        Text(labels[i],
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: _tab == i ? Colors.white : idle)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
