@@ -599,16 +599,21 @@ class _NodePracticeSheetState extends State<_NodePracticeSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      widget.target.kana,
-                      style: const TextStyle(
-                          fontSize: 64, fontWeight: FontWeight.bold),
+                    // Ketuk hurufnya juga membunyikan suara (sama seperti tombol speaker).
+                    GestureDetector(
+                      onTap: () => TtsService.instance
+                          .speak(_questions[_qi].kana),
+                      child: Text(
+                        _questions[_qi].kana,
+                        style: const TextStyle(
+                            fontSize: 64, fontWeight: FontWeight.bold),
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.volume_up,
                           color: brand, size: 30),
-                      onPressed: () =>
-                          TtsService.instance.speak(widget.target.kana),
+                      onPressed: () => TtsService.instance
+                          .speak(_questions[_qi].kana),
                     ),
                   ],
                 ),
