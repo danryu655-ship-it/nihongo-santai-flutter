@@ -39,49 +39,162 @@ class KanaPath extends StatelessWidget {
     final chars = _chars;
     final mastered =
         chars.where((c) => state.kanaMastery(c.kana) >= 1).length;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+    final dark = state.softDark;
+    // Dekorasi pemandangan di sela-sela bab (setelah BAB 2, 5, 8).
+    const decorations = {1: '🌸', 4: '🏯', 7: '🗻'};
+    return Stack(
       children: [
-        Text(
-          hiragana ? 'Jalur Hiragana' : 'Jalur Katakana',
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '$mastered dari ${chars.length} huruf dikuasai',
-          style: const TextStyle(
-              fontSize: 13, color: brand, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: chars.isEmpty ? 0 : mastered / chars.length,
-            minHeight: 8,
-            backgroundColor: Colors.grey.shade200,
-            valueColor: const AlwaysStoppedAnimation<Color>(okGreen),
-          ),
-        ),
-        const SizedBox(height: 8),
-        for (var b = 0; b < _bab.length; b++) ...[
-          _BabHeader(
-            index: b + 1,
-            name: _bab[b].$1,
-            chars: chars.sublist(_bab[b].$2, _bab[b].$2 + _bab[b].$3),
-            state: state,
-          ),
-          for (var j = 0; j < _bab[b].$3; j++)
-            _NodeRow(
-              chars: chars,
-              globalIndex: _bab[b].$2 + j,
-              inBabIndex: j,
-              babSize: _bab[b].$3,
-              state: state,
+        // Latar gradien hijau muda ala gambar contoh (gelap bila tema gelap).
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: dark
+                    ? const [Color(0xFF1C2B20), Color(0xFF10160F)]
+                    : const [Color(0xFFDDEED3), Color(0xFFF4F9EA)],
+              ),
             ),
-        ],
+          ),
+        ),
+        // Gelembung awan lembut di latar.
+        Positioned(top: 90, right: -40, child: _blob(150, dark)),
+        Positioned(top: 430, left: -50, child: _blob(130, dark)),
+        Positioned(bottom: 140, right: -30, child: _blob(110, dark)),
+        ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            Text(
+              hiragana ? 'Jalur Hiragana' : 'Jalur Katakana',
+              style:
+                  const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$mastered dari ${chars.length} huruf dikuasai',
+              style: const TextStyle(
+                  fontSize: 13, color: brand, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: chars.isEmpty ? 0 : mastered / chars.length,
+                minHeight: 8,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: const AlwaysStoppedAnimation<Color>(okGreen),
+              ),
+            ),
+            // Gerbang torii di atas jalur.
+            const _SceneRow(center: '⛩️'),
+            for (var b = 0; b < _bab.length; b++) ...[
+              _BabHeader(
+                index: b + 1,
+                name: _bab[b].$1,
+                chars: chars.sublist(_bab[b].$2, _bab[b].$2 + _bab[b].$3),
+                state: state,
+              ),
+              for (var j = 0; j < _bab[b].$3; j++)
+                _NodeRow(
+                  chars: chars,
+                  globalIndex: _bab[b].$2 + j,
+                  inBabIndex: j,
+                  babSize: _bab[b].$3,
+                  state: state,
+                ),
+              if (decorations.containsKey(b))
+                _SceneRow(center: decorations[b]!),
+            ],
+            // Bukit di ujung jalur.
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 110,
+              width: double.infinity,
+              child: CustomPaint(painter: _HillsPainter(dark: dark)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'がんばって！ Terus semangat!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ],
     );
   }
+
+  /// Gelembung putih lembut untuk latar.
+  Widget _blob(double size, bool dark) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: dark ? 0.04 : 0.35),
+        ),
+      );
+}
+
+/// Satu baris dekorasi pemandangan (mis. torii diapit awan).
+class _SceneRow extends StatelessWidget {
+  const _SceneRow({required this.center, this.sides = '☁️'});
+
+  final String center;
+  final String sides;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(sides, style: const TextStyle(fontSize: 26)),
+          const SizedBox(width: 12),
+          Text(center, style: const TextStyle(fontSize: 56)),
+          const SizedBox(width: 12),
+          Text(sides, style: const TextStyle(fontSize: 26)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dua bukit hijau bergelombang di ujung jalur.
+class _HillsPainter extends CustomPainter {
+  const _HillsPainter({required this.dark});
+
+  final bool dark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final back = Paint()
+      ..color = dark ? const Color(0xFF2A4A32) : const Color(0xFFBFDDB0);
+    final front = Paint()
+      ..color = dark ? const Color(0xFF1E3325) : const Color(0xFFA8D194);
+    final p1 = Path()..moveTo(0, size.height * 0.55);
+    p1.quadraticBezierTo(size.width * 0.25, size.height * 0.2,
+        size.width * 0.5, size.height * 0.55);
+    p1.quadraticBezierTo(size.width * 0.75, size.height * 0.9,
+        size.width, size.height * 0.5);
+    p1.lineTo(size.width, size.height);
+    p1.lineTo(0, size.height);
+    p1.close();
+    canvas.drawPath(p1, back);
+    final p2 = Path()..moveTo(0, size.height * 0.75);
+    p2.quadraticBezierTo(size.width * 0.3, size.height * 0.45,
+        size.width * 0.6, size.height * 0.75);
+    p2.quadraticBezierTo(size.width * 0.85, size.height * 0.95,
+        size.width, size.height * 0.7);
+    p2.lineTo(size.width, size.height);
+    p2.lineTo(0, size.height);
+    p2.close();
+    canvas.drawPath(p2, front);
+  }
+
+  @override
+  bool shouldRepaint(_HillsPainter old) => old.dark != dark;
 }
 
 /// Header tiap bab: pil "BAB n • Baris X" + progres bab.
