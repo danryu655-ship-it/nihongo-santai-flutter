@@ -7,6 +7,7 @@ import '../services/store.dart';
 import '../services/school_sync.dart';
 import '../services/tts_service.dart';
 import '../widgets.dart';
+import 'kana_path.dart';
 
 /// Tab Kana: belajar Hiragana & Katakana — grid huruf dengan progress per
 /// huruf, ketuk huruf untuk mendengarnya, plus mode kuis dua arah.
@@ -24,6 +25,7 @@ class _KanaScreenState extends State<KanaScreen>
   late final TabController _tabs;
   String? _tapped; // huruf terakhir yang diketuk (highlight)
   _Quiz? _quiz; // null = tampil grid, tidak null = mode kuis
+  String _mode = 'jalur'; // 'jalur' = jalur belajar, 'tabel' = tabel huruf
 
   static const List<KanaChar> _hiraganaAll = [...hiragana, ...hiraganaDakuten];
   static const List<KanaChar> _katakanaAll = [...katakana, ...katakanaDakuten];
@@ -90,30 +92,89 @@ class _KanaScreenState extends State<KanaScreen>
                 Tab(text: 'KATAKANA'),
               ],
             ),
+            _buildModeToggle(),
             Expanded(
               child: TabBarView(
                 controller: _tabs,
                 children: [
-                  _buildScriptTab(
-                    title: 'Yuk, belajar Hiragana!',
-                    subtitle:
-                        'Pelajari sistem penulisan utama dalam bahasa Jepang',
-                    basic: hiragana,
-                    dakuten: hiraganaDakuten,
-                  ),
-                  _buildScriptTab(
-                    title: 'Yuk, belajar Katakana!',
-                    subtitle:
-                        'Latih karakter-karakter yang digunakan untuk kata pinjaman',
-                    basic: katakana,
-                    dakuten: katakanaDakuten,
-                  ),
+                  _mode == 'jalur'
+                      ? KanaPath(state: widget.state, hiragana: true)
+                      : _buildScriptTab(
+                          title: 'Yuk, belajar Hiragana!',
+                          subtitle:
+                              'Pelajari sistem penulisan utama dalam bahasa Jepang',
+                          basic: hiragana,
+                          dakuten: hiraganaDakuten,
+                        ),
+                  _mode == 'jalur'
+                      ? KanaPath(state: widget.state, hiragana: false)
+                      : _buildScriptTab(
+                          title: 'Yuk, belajar Katakana!',
+                          subtitle:
+                              'Latih karakter-karakter yang digunakan untuk kata pinjaman',
+                          basic: katakana,
+                          dakuten: katakanaDakuten,
+                        ),
                 ],
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  /// Sakelar Jalur / Tabel di bawah tab Hiragana-Katakana.
+  Widget _buildModeToggle() {
+    final dark = widget.state.softDark;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF2A2825) : Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          _modeButton('Jalur', Icons.route, _mode == 'jalur'),
+          _modeButton('Tabel', Icons.grid_view, _mode == 'tabel'),
+        ],
+      ),
+    );
+  }
+
+  Widget _modeButton(String label, IconData icon, bool active) {
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _mode = label == 'Jalur' ? 'jalur' : 'tabel'),
+        borderRadius: BorderRadius.circular(9),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: active ? brand : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon,
+                  size: 16,
+                  color: active
+                      ? Colors.white
+                      : Colors.grey.shade600),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: active ? Colors.white : Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
